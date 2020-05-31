@@ -6,7 +6,7 @@ const OPCUAClient = opcua.OPCUAClient;
 const ClientFile = filetransfer.ClientFile;
 const OpenFileMode = filetransfer.OpenFileMode;
 const client = OPCUAClient.create({});
-const endpointUrl = "opc.tcp://DESKTOP-K17M86F:4334/UA/Prova";
+const endpointUrl = "opc.tcp://onestasimone-N551VW:4334/UA/Prova";
 
 async function main() {
   try {
@@ -33,24 +33,31 @@ async function main() {
       }
     }
 
-    const fileNodeId = "ns=1;s=MyFile";
+
+    let methodToCalls = [{
+      objectId: "ns=1;s=MyFile",
+      methodId: "ns=1;s=MyFile-Bark",
+  }];
+
+  var x = await session.call(methodToCalls)
+  console.log(x)
 
     // let's create a client file object from the session and nodeId
-    const clientFile = new ClientFile(session, fileNodeId);
+    //const clientFile = new ClientFile(session, fileNodeId);
 
     // let's open the file
-    const mode = OpenFileMode.ReadWriteAppend;
-    await clientFile.open(mode);
+    //const mode = OpenFileMode.ReadWriteAppend;
+    //await clientFile.open(mode);
 
     // ... do some reading or writing
     //const size = await clientFile.size();
     //console.log("the current file size is : ", size, " bytes");
-    const pos = await clientFile.setPosition([0,0]);
-    console.log(pos);
-    const data: Buffer = await clientFile.read(6);
-    console.log("What can I say except ", data.toString());
+    //const pos = await clientFile.setPosition([0,0]);
+    //console.log(pos);
+    //const data: Buffer = await clientFile.read(6);
+    //console.log("What can I say except ", data.toString());
     // don't forget to close the file when done
-    await clientFile.close();
+    //await clientFile.close();
 
     // step 4 : read a variable with readVariableValue
     

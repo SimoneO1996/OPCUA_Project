@@ -2,17 +2,7 @@ let opcua = require("node-opcua");
 let file_transfer = require("node-opcua-file-transfer");
 const { exec } = require("child_process");
 
-exec("prova.ps1", (error, stdout, stderr) => {
-    if (error) {
-        console.log(`error: ${error.message}`);
-        return;
-    }
-    if (stderr) {
-        console.log(`stderr: ${stderr}`);
-        return;
-    }
-    console.log(`stdout: ${stdout}`);
-});
+
 let date_ob = new Date();
 let server = new opcua.OPCUAServer({
     port: 4334,
@@ -53,20 +43,9 @@ server.initialize(() =>{
 
             browseName: "Bark",
         
-            inputArguments:  [
-                {
-                    name:"nbBarks",
-                    description: { text: "specifies the number of time I should bark" },
-                    dataType: opcua.DataType.UInt32        
-                },{
-                    name:"volume",
-                    description: { text: "specifies the sound volume [0 = quiet ,100 = loud]" },
-                    dataType: opcua.DataType.UInt32
-                }
-             ],
         
             outputArguments: [{
-                 name:"Barks",
+                 name:"out",
                  description:{ text: "the generated barks" },
                  dataType: opcua.DataType.String ,
                  valueRank: 1
@@ -75,29 +54,28 @@ server.initialize(() =>{
         
         // optionally, we can adjust userAccessLevel attribute 
         method.outputArguments.userAccessLevel = opcua.makeAccessLevelFlag("CurrentRead");
-        method.inputArguments.userAccessLevel = opcua.makeAccessLevelFlag("CurrentRead");
 
 
-        method.bindMethod((inputArguments,context,callback) => {
+        method.bindMethod((inputarguments,context,callback) => {
 
-            const nbBarks = inputArguments[0].value;
-            const volume =  inputArguments[1].value;
-        
-            console.log("Hello World ! I will bark ",nbBarks," times");
-            console.log("the requested volume is ",volume,"");
-            const sound_volume = Array(volume).join("!");
-        
-            const barks = [];
-            for(let i=0; i < nbBarks; i++){
-                barks.push("Whaff" + sound_volume);
-            }
+            exec("sh prova.sh", (error, stdout, stderr) => {
+                if (error) {
+                    console.log(`error: ${error.message}`);
+                    return;
+                }
+                if (stderr) {
+                    console.log(`stderr: ${stderr}`);
+                    return;
+                }
+                console.log(`${stdout}`);
+            });
         
             const callMethodResult = {
                 statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{
                         dataType: opcua.DataType.String,
                         arrayType: opcua.VariantArrayType.Array,
-                        value :barks
+                        value : "ok"
                 }]
             };
             callback(null,callMethodResult);
