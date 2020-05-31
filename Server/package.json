@@ -1,0 +1,17 @@
+{
+  "name": "file-transfer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "ts-node server.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-opcua": "^2.5.12",
+    "node-opcua-file-transfer": "^2.5.12",
+    "typescript": "^3.9.3"
+  }
+}
