@@ -1,6 +1,18 @@
 let opcua = require("node-opcua");
 let file_transfer = require("node-opcua-file-transfer");
+const { exec } = require("child_process");
 
+exec("prova.ps1", (error, stdout, stderr) => {
+    if (error) {
+        console.log(`error: ${error.message}`);
+        return;
+    }
+    if (stderr) {
+        console.log(`stderr: ${stderr}`);
+        return;
+    }
+    console.log(`stdout: ${stdout}`);
+});
 let date_ob = new Date();
 let server = new opcua.OPCUAServer({
     port: 4334,
@@ -34,7 +46,7 @@ server.initialize(() =>{
         });
 
         file_transfer.installFileType(myFile, { 
-            filename: "prova.txt"
+            filename: "prova.ps1"
         });
 
         const method = namespace.addMethod(myFile,{
