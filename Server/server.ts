@@ -32,9 +32,7 @@ server.initialize(() =>{
             browseName: "ScriptsFolder"
         });
 
-        file_transfer.installFileType(myFile, { 
-            filename: "prova.sh"
-        });
+        const addFile = namespace.addMethod(folder,{
 
             browseName: "AddFile",
 
@@ -59,19 +57,12 @@ server.initialize(() =>{
 
         addFile.bindMethod((inputArguments, context, callback) => {
 
-        method.bindMethod((inputarguments,context,callback) => {
-            let script_name = context.object.$fileData.filename
+            const fileType = addressSpace.findObjectType("FileType")!;
 
-            exec(`sh ${script_name}`, (error, stdout, stderr) => {
-                if (error) {
-                    console.log(`error: ${error.message}`);
-                    return;
-                }
-                if (stderr) {
-                    console.log(`stderr: ${stderr}`);
-                    return;
-                }
-                console.log(`${stdout}`);
+            const scriptFile = fileType.instantiate({
+                nodeId: "s="+inputArguments[0].value,
+                browseName: inputArguments[0].value,
+                organizedBy: folder
             });
 
             file_transfer.installFileType(scriptFile, { 
