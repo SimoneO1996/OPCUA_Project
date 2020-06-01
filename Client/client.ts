@@ -5,14 +5,27 @@ const AttributeIds = opcua.AttributeIds;
 const OPCUAClient = opcua.OPCUAClient;
 const ClientFile = filetransfer.ClientFile;
 const OpenFileMode = filetransfer.OpenFileMode;
-const client = OPCUAClient.create({});
-const endpointUrl = "opc.tcp://onestasimone-N551VW:4334/UA/Prova";
+const endpointUrl = "opc.tcp://DESKTOP-K17M86F:4334/UA/Prova";
+
+async function timeout(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+var options = {
+  connectionStrategy: {
+      maxRetry: 1
+  },
+  endpoint_must_exist: false,
+};
+
+const client = OPCUAClient.create(options);
 
 async function main() {
   try {
     // step 1 : connect to
     await client.connect(endpointUrl);
     console.log("connected !");
+
 
     // step 2 : createSession
     const session = await client.createSession();
