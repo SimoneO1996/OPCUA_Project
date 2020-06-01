@@ -23,6 +23,7 @@ const client = OPCUAClient.create(options);
 async function main() {
   try {
     // step 1 : connect to
+
     await client.connect(endpointUrl);
     console.log("connected !");
 
