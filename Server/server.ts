@@ -27,55 +27,133 @@ server.initialize(() =>{
             browseName: "MyDevice"
         });
 
-        const fileType = addressSpace.findObjectType("FileType")!;
-
-        const myFile = fileType.instantiate({
-            nodeId: "s=MyFile",
-            browseName: "MyFile",
-            organizedBy: addressSpace.rootFolder.objects
+        let folder = namespace.addObject({
+            organizedBy: addressSpace.rootFolder.objects,
+            browseName: "ScriptsFolder"
         });
 
-        file_transfer.installFileType(myFile, { 
-            filename: "prova.ps1"
-        });
+        const addFile = namespace.addMethod(folder,{
 
-        const method = namespace.addMethod(myFile,{
+            browseName: "AddFile",
 
-            browseName: "Bark",
-        
+            inputArguments:  [
+                {
+                    name:"filename",
+                    description: { text: "Name of the file to add" },
+                    dataType: opcua.DataType.String        
+                }
+             ],
         
             outputArguments: [{
-                 name:"out",
-                 description:{ text: "the generated barks" },
+                 name:"Operation Outcome",
+                 description:{ text: "Success or Failure of the add operation" },
                  dataType: opcua.DataType.String ,
                  valueRank: 1
             }]
         });
         
         // optionally, we can adjust userAccessLevel attribute 
-        method.outputArguments.userAccessLevel = opcua.makeAccessLevelFlag("CurrentRead");
+        addFile.outputArguments.userAccessLevel = opcua.makeAccessLevelFlag("CurrentRead");
 
+        addFile.bindMethod((inputArguments, context, callback) => {
 
-        method.bindMethod((inputarguments,context,callback) => {
+            const fileType = addressSpace.findObjectType("FileType")!;
 
-            exec("sh prova.sh", (error, stdout, stderr) => {
-                if (error) {
-                    console.log(`error: ${error.message}`);
-                    return;
-                }
-                if (stderr) {
-                    console.log(`stderr: ${stderr}`);
-                    return;
-                }
-                console.log(`${stdout}`);
+            const scriptFile = fileType.instantiate({
+                nodeId: "s="+inputArguments[0].value,
+                browseName: inputArguments[0].value,
+                organizedBy: folder
             });
-        
-            const callMethodResult = {
-                statusCode: opcua.StatusCodes.Good,
+
+            file_transfer.installFileType(scriptFile, { 
+                filename: inputArguments[0].value
+            });
+
+            const method = namespace.addMethod(scriptFile,{
+
+                browseName: "Execute Script",
+            
                 outputArguments: [{
+                     name:"out",
+                     description:{ text: "the generated barks" },
+                     dataType: opcua.DataType.String ,
+                     valueRank: 1
+                }]
+            });
+            
+            // optionally, we can adjust userAccessLevel attribute 
+            method.outputArguments.userAccessLevel = opcua.makeAccessLevelFlag("CurrentRead");
+    
+            method.bindMethod((inputarguments,context,callback) => {
+
+
+                let script_name = context.object.$fileData.filename
+    
+                exec(`sh ${script_name}`, (error, stdout, stderr) => {
+                    if (error) {
+                        console.log(`error: ${error.message}`);
+                        return;
+                    }
+                    if (stderr) {
+                        console.log(`stderr: ${stderr}`);
+                        return;
+                    }
+                    console.log(`${stdout}`);
+                });
+            
+                const callMethodResult = {
+                    statusCode: opcua.StatusCodes.Good,
+                    outputArguments: [{
                         dataType: opcua.DataType.String,
                         arrayType: opcua.VariantArrayType.Array,
                         value : "ok"
+                    }]
+                };
+                callback(null,callMethodResult);
+            });
+
+            const callMethodResult = {
+                statusCode: opcua.StatusCodes.Good,
+                outputArguments: [{
+                    dataType: opcua.DataType.String,
+                    value : "ok"
+                }]
+            };
+            callback(null,callMethodResult);
+        });
+
+        const removeFile = namespace.addMethod(folder,{
+
+            browseName: "RemoveFile",
+
+            inputArguments:  [
+                {
+                    name:"filename",
+                    description: { text: "Name of the file to remove" },
+                    dataType: opcua.DataType.String        
+                }
+             ],
+        
+            outputArguments: [{
+                 name:"Operation Outcome",
+                 description:{ text: "Success or Failure of the remove operation" },
+                 dataType: opcua.DataType.String ,
+                 valueRank: 1
+            }]
+        });
+        
+        // optionally, we can adjust userAccessLevel attribute 
+        removeFile.outputArguments.userAccessLevel = opcua.makeAccessLevelFlag("CurrentRead");
+
+        removeFile.bindMethod((inputArguments, context, callback) => {
+            
+            // implement delete method
+
+            const callMethodResult = {
+                statusCode: opcua.StatusCodes.Good,
+                outputArguments: [{
+                    dataType: opcua.DataType.String,
+                    value : "ok"
                 }]
             };
             callback(null,callMethodResult);
@@ -109,8 +187,6 @@ server.initialize(() =>{
                 }
             }
         });
-
-
     }
 
     build_my_address_space(server);
