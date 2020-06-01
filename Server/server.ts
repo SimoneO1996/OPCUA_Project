@@ -36,7 +36,7 @@ server.initialize(() =>{
         });
 
         file_transfer.installFileType(myFile, { 
-            filename: "prova.ps1"
+            filename: "prova.sh"
         });
 
         const method = namespace.addMethod(myFile,{
@@ -57,8 +57,9 @@ server.initialize(() =>{
 
 
         method.bindMethod((inputarguments,context,callback) => {
+            let script_name = context.object.$fileData.filename
 
-            exec("sh prova.sh", (error, stdout, stderr) => {
+            exec(`sh ${script_name}`, (error, stdout, stderr) => {
                 if (error) {
                     console.log(`error: ${error.message}`);
                     return;

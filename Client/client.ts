@@ -11,6 +11,7 @@ const endpointUrl = "opc.tcp://onestasimone-N551VW:4334/UA/Prova";
 async function main() {
   try {
     // step 1 : connect to
+
     await client.connect(endpointUrl);
     console.log("connected !");
 
