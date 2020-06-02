@@ -27,9 +27,8 @@ server.initialize(() =>{
             browseName: "MyDevice"
         });
 
-        let folder = namespace.addObject({
-            organizedBy: addressSpace.rootFolder.objects,
-            browseName: "ScriptsFolder"
+        let folder = namespace.addFolder(addressSpace.rootFolder.objects, {
+            browseName: "Scripts"
         });
 
         const addFile = namespace.addMethod(folder,{
@@ -57,7 +56,9 @@ server.initialize(() =>{
 
         addFile.bindMethod((inputArguments, context, callback) => {
 
-            const fileType = addressSpace.findObjectType("FileType")!;
+            const fileType = addressSpace.findObjectType("FileType");
+
+            console.log(fileType);
 
             const scriptFile = fileType.instantiate({
                 nodeId: "s="+inputArguments[0].value,
@@ -75,7 +76,7 @@ server.initialize(() =>{
             
                 outputArguments: [{
                      name:"out",
-                     description:{ text: "the generated barks" },
+                     description:{ text: "Operation Outcome" },
                      dataType: opcua.DataType.String ,
                      valueRank: 1
                 }]
@@ -89,7 +90,7 @@ server.initialize(() =>{
 
                 let script_name = context.object.$fileData.filename
     
-                exec(`sh ${script_name}`, (error, stdout, stderr) => {
+                exec(`ts-node ${script_name}`, (error, stdout, stderr) => {
                     if (error) {
                         console.log(`error: ${error.message}`);
                         return;
@@ -105,7 +106,6 @@ server.initialize(() =>{
                     statusCode: opcua.StatusCodes.Good,
                     outputArguments: [{
                         dataType: opcua.DataType.String,
-                        arrayType: opcua.VariantArrayType.Array,
                         value : "ok"
                     }]
                 };
@@ -116,7 +116,7 @@ server.initialize(() =>{
                 statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{
                     dataType: opcua.DataType.String,
-                    value : "ok"
+                    value : "File added correctly"
                 }]
             };
             callback(null,callMethodResult);
@@ -148,14 +148,30 @@ server.initialize(() =>{
         removeFile.bindMethod((inputArguments, context, callback) => {
             
             // implement delete method
-
-            const callMethodResult = {
-                statusCode: opcua.StatusCodes.Good,
-                outputArguments: [{
-                    dataType: opcua.DataType.String,
-                    value : "ok"
-                }]
-            };
+            var nodeId = "ns=1;s="+inputArguments[0].value
+            console.log("Find Obj" + addressSpace.findNode(nodeId))
+            let fileToDel = addressSpace.findNode(nodeId)
+            let callMethodResult;
+            if(fileToDel) {
+                console.log("Entered IF: " + fileToDel);
+                addressSpace.deleteNode(fileToDel.nodeId);
+                callMethodResult = {
+                    statusCode: opcua.StatusCodes.Good,
+                    outputArguments: [{
+                        dataType: opcua.DataType.String,
+                        value : "File removed correctly"
+                    }]
+                };
+            } else {
+                callMethodResult = {
+                    statusCode: opcua.StatusCodes.Bad,
+                    outputArguments: [{
+                        dataType: opcua.DataType.String,
+                        value : "File Not Found"
+                    }]
+                };
+            }
+            
             callback(null,callMethodResult);
         });
 
