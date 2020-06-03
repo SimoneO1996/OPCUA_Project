@@ -53,12 +53,12 @@ async function main() {
 
     let methodToCalls = [{
       objectId: "ns=1;i=1001",
-      methodId: "ns=1;i=1002",
+      methodId: "ns=1;i=1005",
       inputArguments: [{dataType: opcua.DataType.String, value: "prova.ts" }]
   }];
 
   var x = await session.call(methodToCalls)
-  console.log(x)
+  console.log(x[0])
 
     // let's create a client file object from the session and nodeId
     //const clientFile = new ClientFile(session, fileNodeId);

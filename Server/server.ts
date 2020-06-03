@@ -55,71 +55,82 @@ server.initialize(() =>{
         addFile.outputArguments.userAccessLevel = opcua.makeAccessLevelFlag("CurrentRead");
 
         addFile.bindMethod((inputArguments, context, callback) => {
+            let callMethodResult
 
-            const fileType = addressSpace.findObjectType("FileType");
-
-            console.log(fileType);
-
-            const scriptFile = fileType.instantiate({
-                nodeId: "s="+inputArguments[0].value,
-                browseName: inputArguments[0].value,
-                organizedBy: folder
-            });
-
-            file_transfer.installFileType(scriptFile, { 
-                filename: inputArguments[0].value
-            });
-
-            const method = namespace.addMethod(scriptFile,{
-
-                browseName: "Execute Script",
-            
-                outputArguments: [{
-                     name:"out",
-                     description:{ text: "Operation Outcome" },
-                     dataType: opcua.DataType.String ,
-                     valueRank: 1
-                }]
-            });
-            
-            // optionally, we can adjust userAccessLevel attribute 
-            method.outputArguments.userAccessLevel = opcua.makeAccessLevelFlag("CurrentRead");
-    
-            method.bindMethod((inputarguments,context,callback) => {
-
-
-                let script_name = context.object.$fileData.filename
-    
-                exec(`ts-node ${script_name}`, (error, stdout, stderr) => {
-                    if (error) {
-                        console.log(`error: ${error.message}`);
-                        return;
-                    }
-                    if (stderr) {
-                        console.log(`stderr: ${stderr}`);
-                        return;
-                    }
-                    console.log(`${stdout}`);
+            try {   
+                const fileType = addressSpace.findObjectType("FileType");
+                const scriptFile = fileType.instantiate({
+                    nodeId: "s="+inputArguments[0].value,
+                    browseName: inputArguments[0].value,
+                    organizedBy: folder
                 });
-            
-                const callMethodResult = {
+                file_transfer.installFileType(scriptFile, { 
+                    filename: inputArguments[0].value
+                });
+                const method = namespace.addMethod(scriptFile,{
+
+                    browseName: "Execute Script",
+                
+                    outputArguments: [{
+                        name:"out",
+                        description:{ text: "Operation Outcome" },
+                        dataType: opcua.DataType.String ,
+                        valueRank: 1
+                    }]
+                });
+                
+                // optionally, we can adjust userAccessLevel attribute 
+                method.outputArguments.userAccessLevel = opcua.makeAccessLevelFlag("CurrentRead");
+        
+                method.bindMethod((inputarguments,context,callback) => {
+
+
+                    let script_name = context.object.$fileData.filename
+        
+                    exec(`ts-node ${script_name}`, (error, stdout, stderr) => {
+                        if (error) {
+                            console.log(`error: ${error.message}`);
+                            return;
+                        }
+                        if (stderr) {
+                            console.log(`stderr: ${stderr}`);
+                            return;
+                        }
+                        console.log(`${stdout}`);
+                    });
+                
+                    const callMethodResult = {
+                        statusCode: opcua.StatusCodes.Good,
+                        outputArguments: [{
+                            dataType: opcua.DataType.String,
+                            value : "ok"
+                        }]
+                    };
+                    callback(null,callMethodResult);
+                });
+
+                    callMethodResult = {
                     statusCode: opcua.StatusCodes.Good,
                     outputArguments: [{
                         dataType: opcua.DataType.String,
-                        value : "ok"
+                        value : "File added correctly"
                     }]
                 };
+                }
+            catch(err){
+                console.log(err)
+                callMethodResult = {
+                    statusCode: opcua.StatusCodes.Bad,
+                    outputArguments: [{
+                        dataType: opcua.DataType.String,
+                        value : err.message
+                    }]
+                };
+            }
+            finally{
                 callback(null,callMethodResult);
-            });
-
-            const callMethodResult = {
-                statusCode: opcua.StatusCodes.Good,
-                outputArguments: [{
-                    dataType: opcua.DataType.String,
-                    value : "File added correctly"
-                }]
-            };
-            callback(null,callMethodResult);
+            }
+            
         });
 
         const removeFile = namespace.addMethod(folder,{
@@ -152,7 +163,7 @@ server.initialize(() =>{
             console.log("Find Obj" + addressSpace.findNode(nodeId))
             let fileToDel = addressSpace.findNode(nodeId)
             let callMethodResult;
-            if(fileToDel) {
+            try {
                 console.log("Entered IF: " + fileToDel);
                 addressSpace.deleteNode(fileToDel.nodeId);
                 callMethodResult = {
@@ -162,17 +173,20 @@ server.initialize(() =>{
                         value : "File removed correctly"
                     }]
                 };
-            } else {
+            } catch(err) {
+                console.log(err)
                 callMethodResult = {
                     statusCode: opcua.StatusCodes.Bad,
                     outputArguments: [{
                         dataType: opcua.DataType.String,
-                        value : "File Not Found"
+                        value : "Impossible to eliminate the file check if it exists on the address space"
                     }]
                 };
             }
+            finally{
+                callback(null,callMethodResult);
+            }
             
-            callback(null,callMethodResult);
         });
 
         //add some variables
