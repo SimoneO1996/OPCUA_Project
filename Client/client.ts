@@ -5,7 +5,7 @@ const AttributeIds = opcua.AttributeIds;
 const OPCUAClient = opcua.OPCUAClient;
 const ClientFile = filetransfer.ClientFile;
 const OpenFileMode = filetransfer.OpenFileMode;
-const endpointUrl = "opc.tcp://DESKTOP-K17M86F:4334/UA/Prova";
+const endpointUrl = "opc.tcp://onestasimone-N551VW:4334/UA/Prova";
 
 async function timeout(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -35,6 +35,8 @@ async function main() {
     // step 3 : browse
     const browseResult = await session.browse("RootFolder");
 
+    
+    /*
     console.log("references of Root :");
     for (const reference of browseResult.references) {
       console.log("   -> ", reference.browseName.toString());
@@ -46,11 +48,13 @@ async function main() {
         }
       }
     }
+    */
 
 
     let methodToCalls = [{
-      objectId: "ns=1;s=MyFile",
-      methodId: "ns=1;s=MyFile-Bark",
+      objectId: "ns=1;i=1001",
+      methodId: "ns=1;i=1002",
+      inputArguments: [{dataType: opcua.DataType.String, value: "prova.ts" }]
   }];
 
   var x = await session.call(methodToCalls)
