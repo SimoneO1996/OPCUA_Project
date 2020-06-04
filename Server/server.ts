@@ -1,8 +1,8 @@
-let opcua = require("node-opcua");
+const opcua = require("node-opcua");
 import { build_my_address_space } from "./utils/methods"
 import "./file_service"
 
-let server = new opcua.OPCUAServer({
+const server = new opcua.OPCUAServer({
     port: 4334,
     resourcePath: "/UA/Prova",
     buildInfo: {
@@ -21,7 +21,7 @@ server.initialize(() =>{
 
     server.start(() => {
         console.log(`Server is now listening port ${server.endpoints[0].port}... (press CTRL+C to stop)`);
-        let endpointUrl = server.endpoints[0].endpointDescriptions()[0].endpointUrl;
+        const endpointUrl = server.endpoints[0].endpointDescriptions()[0].endpointUrl;
         console.log("The primary server endpoint url is ", endpointUrl);
     });
 
