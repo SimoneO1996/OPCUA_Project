@@ -1,5 +1,7 @@
 const opcua = require("node-opcua");
 const file_transfer = require("node-opcua-file-transfer");
+const path = require('path');
+const fs = require('fs');
 import  Options  from "../constants/options"
 import { executeScript } from "../file_service"
 
@@ -21,8 +23,10 @@ export function build_my_address_space(server) {
                 browseName: inputArguments[0].value,
                 organizedBy: parentFolder
             });
-            file_transfer.installFileType(scriptFile, { 
-                filename: inputArguments[0].value
+            file_transfer.installFileType(scriptFile, {
+                // This puts all the added files in the scripts folder, which will be useful
+                // when initializing Scripts folder node, to load any already existent script
+                filename: "./scripts/"+inputArguments[0].value
             });
             const executeScriptNode = namespace.addMethod(scriptFile, Options.executeScriptOptions);
     
@@ -100,7 +104,6 @@ export function build_my_address_space(server) {
         let fileToDel = addressSpace.findNode(nodeId)
         let callMethodResult;
         try {
-            console.log("Entered IF: " + fileToDel);
             addressSpace.deleteNode(fileToDel.nodeId);
             callMethodResult = {
                 statusCode: opcua.StatusCodes.Good,
@@ -124,7 +127,6 @@ export function build_my_address_space(server) {
         }
     }
 
-    //declare a new object
     const device = namespace.addObject({
         organizedBy: addressSpace.rootFolder.objects,
         browseName: "MyDevice"
@@ -132,6 +134,32 @@ export function build_my_address_space(server) {
 
     const folder = namespace.addFolder(addressSpace.rootFolder.objects, {
         browseName: "Scripts"
+    });
+
+    const directoryPath = path.join(__dirname, '../scripts');
+    // Creates the directory if it doesn't exists
+    if (!fs.existsSync(directoryPath)){
+        fs.mkdirSync(directoryPath);
+    }
+
+    fs.readdir(directoryPath, function (err, files) {
+        if (err) {
+            return console.log('Unable to scan directory: ' + err);
+        }
+        // Goes through all files in the scripts directory and loads them in the address space
+        files.forEach(function (file) {
+            const fileType = addressSpace.findObjectType("FileType");
+            const scriptFile = fileType.instantiate({
+                nodeId: "s=" + file,
+                browseName: file,
+                organizedBy: addressSpace.rootFolder.objects.scripts
+            });
+            file_transfer.installFileType(scriptFile, {
+                // This puts all the added files in the scripts folder, which will be useful
+                // when initializing Scripts folder node, to load any already existent script
+                filename: "./scripts/" + file
+            });
+        });
     });
 
     const addFileNode = namespace.addMethod(folder, Options.addFileOptions);

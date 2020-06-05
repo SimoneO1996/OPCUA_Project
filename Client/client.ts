@@ -7,7 +7,7 @@ const AttributeIds = opcua.AttributeIds;
 const OPCUAClient = opcua.OPCUAClient;
 const ClientFile = filetransfer.ClientFile;
 const OpenFileMode = filetransfer.OpenFileMode;
-const endpointUrl = "opc.tcp://onestasimone-N551VW:4334/UA/Prova";
+const endpointUrl = "opc.tcp://192.168.1.188:4334/UA/Prova";
 
 
 
