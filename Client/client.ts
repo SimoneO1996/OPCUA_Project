@@ -1,7 +1,7 @@
 const opcua = require("node-opcua");
 const filetransfer = require("node-opcua-file-transfer");
-var treeify = require('treeify');
-const readline = require('readline');
+const blessed = require('blessed');
+
 
 const AttributeIds = opcua.AttributeIds;
 const OPCUAClient = opcua.OPCUAClient;
@@ -19,12 +19,10 @@ function read(item){
     name: `BrowseName: ${item.browseName.name},\
     NodeAddress: ns=${item.browseName.namespaceIndex};${(item.nodeId.identifierType == 1 ? "i":"s")}=${item.nodeId.value},\
     NodeClass: ${(item.nodeClass == 1) ? "Object" : (item.nodeClass == 4) ? "method" :  item.nodeClass}`,
-    value: {
-      browseName: item.browseName,
-      nodeClass: `${(item.nodeClass == 1) ? "Object" : (item.nodeClass == 4) ? "method" :  item.nodeClass}`,
-      NodeAddress: `ns=${item.browseName.namespaceIndex};${(item.nodeId.identifierType == 1 ? "i":"s")}=${item.nodeId.value}`
+    browseName: item.browseName,
+    nodeClass: `${(item.nodeClass == 1) ? "Object" : (item.nodeClass == 4) ? "method" :  item.nodeClass}`,
+    NodeAddress: `ns=${item.nodeId.namespace};${(item.nodeId.identifierType == 1 ? "i":"s")}=${item.nodeId.value}`
 
-    }
   }
   return node
 }
@@ -32,7 +30,7 @@ function read(item){
 async function navigate(session,node){
   let nodes = []
   let browseResult = await session.browse(node);
-
+      
       for(let i = 0; i <browseResult.references.length; i ++ ){
         nodes.push(read(browseResult.references[i]))
       }
@@ -48,6 +46,65 @@ function get_text_node(nodes) : String {
   }
   return nodes_string
 }
+
+function create_text_input(blessed,i, parent){
+
+  var inputtext = blessed.textarea({
+    parent: parent,
+  name: i,
+  top: i +2,
+  input: true,
+  keys: true,
+  height: 1,
+  width: '50%',
+  style: {
+    fg: 'white',
+    bg: 'black',
+    focus: {
+        bg: 'red',
+        fg: 'white'
+    }
+}
+});
+
+return inputtext
+
+}
+
+function create_button(blessed,content,margin_top,margin_left, parent,button_function){
+
+  var button = blessed.button({
+    parent: parent,
+      mouse: true,
+      keys: true,
+      shrink: true,
+      padding: {
+        left: 1,
+        right: 1
+      },
+      top: margin_top,
+      left:margin_left,
+      name: content,
+      content: content,
+      
+      style: {
+        bg: 'blue',
+        focus: {
+          bg: 'red'
+        },
+        hover: {
+          bg: 'red'
+        }
+      }
+});
+
+button.on("press", button_function)
+
+
+return button
+
+}
+
 
 
 
@@ -79,12 +136,18 @@ async function main() {
     const session = await client.createSession();
     //console.log("session created !");
 
+
+    
+
+
+    
     var nodes =  await navigate(session,"ObjectsFolder")
     //console.log(get_text_node(nodes))
-    var blessed = require('blessed');
+   
     var screen = blessed.screen({
       smartCSR: true
     });
+    var navigated_object;
 
     screen.title = 'OPCUA client';
 
@@ -127,9 +190,7 @@ async function main() {
       top: "50%",
       name: 'Navigate',
       content: 'Navigate',
-      border: {
-        type: 'line'
-      },
+      
       style: {
         bg: 'blue',
         focus: {
@@ -154,9 +215,6 @@ async function main() {
     top: "50%",
     name: 'Exec',
     content: 'Exec',
-    border: {
-      type: 'line'
-    },
     style: {
       bg: 'blue',
       focus: {
@@ -226,13 +284,83 @@ async function main() {
     
     button_navigate.on('press', function() {
       var node = input_navigation.getText()
+      navigated_object = node
       navigate(session,node).then( (browseResult) => {
         box.setText(get_text_node(browseResult))
         screen.render()
 
       })
       
-    });
+    })
+
+
+    button_method.on('press',function() {
+      var method = input_method.getText()
+      var form = blessed.form({
+        parent: screen,
+        keys: true,
+        left: "center",
+        top: "center",
+        width: "50%",
+        height: "50%",
+        content: "Method info, press ok to call the method",
+        border: {
+          type: 'line'
+        },
+      });
+      session.getArgumentDefinition(method,function(err,Arguments){
+        if (err){
+          box.setText(err)
+          screen.render()
+        }
+        else{
+          var inputarg_info
+          var inputs = []
+          var inputs_method = []
+          for(let i= 0 ;i< Arguments.inputArguments.length; i++){
+            inputarg_info = `name= ${Arguments.inputArguments[i].name} type=${(Arguments.inputArguments[i].dataType.value == 12) ? "String" :Arguments.inputArguments[i].dataType.toString() }`
+            form.insertBottom(inputarg_info)
+            inputs.push(create_text_input(blessed,i,form))
+          }
+
+          create_button(blessed,"OK",Arguments.inputArguments.length +2,0,form,()=>{
+            for(let x = 0 ; x<Arguments.inputArguments.length; x++){
+              var input_method =  {dataType: Arguments.inputArguments[x].dataType.toString() , value: inputs[x].getText() }
+              inputs_method.push(input_method)
+              console.log(inputs_method)
+            }
+
+            let methodToCalls = [{
+              objectId: navigated_object,
+              methodId: method,
+              inputArguments: inputs
+            }];
+            
+            session.call(methodToCalls,(err,result)=>{
+              if(err){
+                console.log(err)
+              }
+              else{
+              }
+            })
+
+
+            form.destroy()
+            screen.render()
+          } )
+          create_button(blessed,"Exit",Arguments.inputArguments.length +2,5,form,()=>{
+            form.destroy()
+            screen.render()
+          } )
+
+
+          screen.render()
+          form.focus()
+        }
+      })
+      
+
+    } )
 
 
      screen.key(['escape', 'q', 'C-c'],  function() {
@@ -251,11 +379,11 @@ async function main() {
     });
 
 
-    screen.key(['n'],  function() {
+    screen.key(['a'],  function() {
       input_navigation.focus()
       screen.render()
     });
-    screen.key(['e'],  function() {
+    screen.key(['b'],  function() {
       input_method.focus()
       screen.render()
     });
@@ -263,9 +391,9 @@ async function main() {
 
     screen.render();
 
-/*  
+ 
       
-      
+      /*
 
       console.log(x)
 
