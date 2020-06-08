@@ -1,10 +1,10 @@
 const opcua = require("node-opcua");
-import { build_my_address_space } from "./utils/methods"
-import "./file_service"
+import { build_my_address_space } from "./utils/address_space_builder"
+import "./utils/file_service"
 
 const server = new opcua.OPCUAServer({
     port: 4334,
-    resourcePath: "/UA/Prova",
+    resourcePath: "/UA/FileTransfer",
     buildInfo: {
         productName: "RaspUAServer1",
         buildNumber: "1",

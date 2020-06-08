@@ -1,9 +1,8 @@
 const opcua = require("node-opcua");
 const file_transfer = require("node-opcua-file-transfer");
-const path = require('path');
 const fs = require('fs');
 import  Options  from "../constants/options"
-import { executeScript } from "../file_service"
+import { executeScript, initScriptsFolder } from "./file_service"
 
 let date_ob = new Date();
 
@@ -13,27 +12,27 @@ export function build_my_address_space(server) {
 
     const addFile = (inputArguments, context, callback) => {
         let callMethodResult
-
-        const parentFolder = context.object
-
-        try {   
-            const fileType = addressSpace.findObjectType("FileType");
-            const scriptFile = fileType.instantiate({
-                nodeId: "s="+inputArguments[0].value,
-                browseName: inputArguments[0].value,
-                organizedBy: parentFolder
+        let filename = inputArguments[0].value
+        let err = null
+        try {
+            if(addressSpace.findNode("ns=" + namespace.index + ";s=" + filename) != null) {
+                throw new Error("File already exists")
+            }
+            const scriptFile = addressSpace.findObjectType("FileType")
+                .instantiate({
+                    nodeId: "s=" + filename,
+                    browseName: filename,
+                    organizedBy: context.object // object in which the method addFile is called
             });
             file_transfer.installFileType(scriptFile, {
                 // This puts all the added files in the scripts folder, which will be useful
                 // when initializing Scripts folder node, to load any already existent script
                 filename: "./scripts/"+inputArguments[0].value
             });
-            const executeScriptNode = namespace.addMethod(scriptFile, Options.executeScriptOptions);
-    
-            executeScriptNode.bindMethod(executeScript);
+            namespace.addMethod(scriptFile, Options.executeScriptOptions)
+                .bindMethod(executeScript);
             
             callMethodResult = {
-                statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{
                     dataType: opcua.DataType.String,
                     value : "File added correctly"
@@ -43,7 +42,6 @@ export function build_my_address_space(server) {
         catch(err){
             console.log(err)
             callMethodResult = {
-                statusCode: opcua.StatusCodes.Bad,
                 outputArguments: [{
                     dataType: opcua.DataType.String,
                     value : err.message
@@ -51,10 +49,10 @@ export function build_my_address_space(server) {
             };
         }
         finally{
-            callback(null,callMethodResult);
+            callback(err,callMethodResult);
         }
     }
-
+/*
     const addFolder = (inputArguments, context, callback) => {
         let callMethodResult
 
@@ -65,13 +63,11 @@ export function build_my_address_space(server) {
                 nodeId: "s="+inputArguments[0].value,
             });
 
-            const addFileNode = namespace.addMethod(folder, Options.addFileOptions);
-    
-            addFileNode.bindMethod(addFile);
+            namespace.addMethod(folder, Options.addFileOptions)
+                .bindMethod(addFile)
 
-            const removeFileNode = namespace.addMethod(folder, Options.removeFileOptions);
-
-            removeFileNode.bindMethod(removeFile);
+            namespace.addMethod(folder, Options.removeFileOptions)
+                .bindMethod(removeFile)
             
             callMethodResult = {
                 statusCode: opcua.StatusCodes.Good,
@@ -96,17 +92,16 @@ export function build_my_address_space(server) {
         }
         
     }
-
+*/
     const removeFile = (inputArguments, context, callback) => {
-            
-        // implement delete method
-        let nodeId = "ns=1;s="+inputArguments[0].value
-        let fileToDel = addressSpace.findNode(nodeId)
+
+        let nodeId = "ns=" + namespace.index + ";s="+inputArguments[0].value
         let callMethodResult;
         try {
-            addressSpace.deleteNode(fileToDel.nodeId);
+            addressSpace.deleteNode(addressSpace.findNode(nodeId).nodeId);
+            const path = "./scripts/"+inputArguments[0].value
+            fs.unlinkSync(path)
             callMethodResult = {
-                statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{
                     dataType: opcua.DataType.String,
                     value : "File removed correctly"
@@ -115,10 +110,9 @@ export function build_my_address_space(server) {
         } catch(err) {
             console.log(err)
             callMethodResult = {
-                statusCode: opcua.StatusCodes.Bad,
                 outputArguments: [{
                     dataType: opcua.DataType.String,
-                    value : "Impossible to eliminate the file check if it exists on the address space"
+                    value : "Couldn't remove file, check if it exists"
                 }]
             };
         }
@@ -129,50 +123,24 @@ export function build_my_address_space(server) {
 
     const device = namespace.addObject({
         organizedBy: addressSpace.rootFolder.objects,
-        browseName: "MyDevice"
+        browseName: "RaspberryPi4"
     });
 
     const folder = namespace.addFolder(addressSpace.rootFolder.objects, {
         browseName: "Scripts"
     });
 
-    const directoryPath = path.join(__dirname, '../scripts');
-    // Creates the directory if it doesn't exists
-    if (!fs.existsSync(directoryPath)){
-        fs.mkdirSync(directoryPath);
+    try {
+        initScriptsFolder(addressSpace)
+    } catch(err) {
+        console.log(err)
     }
 
-    fs.readdir(directoryPath, function (err, files) {
-        if (err) {
-            return console.log('Unable to scan directory: ' + err);
-        }
-        // Goes through all files in the scripts directory and loads them in the address space
-        files.forEach(function (file) {
-            const fileType = addressSpace.findObjectType("FileType");
-            const scriptFile = fileType.instantiate({
-                nodeId: "s=" + file,
-                browseName: file,
-                organizedBy: addressSpace.rootFolder.objects.scripts
-            });
-            file_transfer.installFileType(scriptFile, {
-                // This puts all the added files in the scripts folder, which will be useful
-                // when initializing Scripts folder node, to load any already existent script
-                filename: "./scripts/" + file
-            });
-        });
-    });
+    namespace.addMethod(folder, Options.addFileOptions)
+        .bindMethod(addFile)
 
-    const addFileNode = namespace.addMethod(folder, Options.addFileOptions);
-
-    addFileNode.bindMethod(addFile);
-
-    const addFolderNode = namespace.addMethod(folder, Options.addFolderOptions);
-
-    addFolderNode.bindMethod(addFolder);
-
-    const removeFileNode = namespace.addMethod(folder, Options.removeFileOptions);
-
-    removeFileNode.bindMethod(removeFile);
+    namespace.addMethod(folder, Options.removeFileOptions)
+        .bindMethod(removeFile)
 
     namespace.addVariable({
         propertyOf: device,
