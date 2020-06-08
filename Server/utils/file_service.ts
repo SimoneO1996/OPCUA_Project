@@ -1,3 +1,5 @@
+import Options from "../constants/options";
+
 const { exec } = require("child_process");
 const path = require('path');
 const fs = require('fs');
@@ -9,7 +11,6 @@ const opcua = require("node-opcua");
  *      Scans the scripts directory and loads all existing files in the address space
  */
 export function initScriptsFolder(addressSpace) {
-    //
     const directoryPath = path.join(__dirname, '../scripts');
     // Creates the directory if it doesn't exists
     if (!fs.existsSync(directoryPath)){
@@ -31,6 +32,8 @@ export function initScriptsFolder(addressSpace) {
             file_transfer.installFileType(scriptFile, {
                 filename: "directoryPath" + file
             });
+            addressSpace.getOwnNamespace().addMethod(scriptFile, Options.executeScriptOptions)
+                .bindMethod(executeScript);
         });
     });
 }
