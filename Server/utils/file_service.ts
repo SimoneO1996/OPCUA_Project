@@ -37,15 +37,24 @@ export function initScriptsFolder(addressSpace) {
 
 export function executeScript(inputArguments,context,callback) {
 
-    let script_name = context.object.$fileData.filename
-
-    exec(`ts-node ${script_name}`, (error, stdout, stderr) => {
-
+    let scriptName = context.object.$fileData.filename
+    let scriptExtension = scriptName.substring(scriptName.length - 2)
+    console.log(scriptExtension)
+    let execCB = (error, stdout, stderr) => {
         if (error) {
             console.log(`error: ${error.message}`);
             return;
         }
-    });
+    };
+
+    switch(scriptExtension) {
+        case "ts":
+            exec(`ts-node ${scriptName}`, execCB);
+            break
+        case "py":
+            exec(`python3 ${scriptName}`, execCB);
+            break
+    }
 
     const callMethodResult = {
         statusCode: opcua.StatusCodes.Good,
