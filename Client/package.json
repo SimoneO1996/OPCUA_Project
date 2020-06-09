@@ -10,11 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "blessed": "^0.1.81",
     "inquirer": "^7.1.0",
     "node-opcua": "^2.5.12",
     "node-opcua-file-transfer": "^2.5.12",
-    "treeify": "^1.1.0",
     "typescript": "^3.9.3"
   }
 }
