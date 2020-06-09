@@ -13,6 +13,7 @@
     "child_process": "^1.0.2",
     "node-opcua": "^2.5.12",
     "node-opcua-file-transfer": "^2.5.12",
+    "node-popup": "^0.1.14",
     "shelljs": "^0.8.4",
     "typescript": "^3.9.3"
   }

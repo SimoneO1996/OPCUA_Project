@@ -1,6 +1,6 @@
 import Options from "../constants/options";
 
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 const path = require('path');
 const fs = require('fs');
 const file_transfer = require("node-opcua-file-transfer");
@@ -30,7 +30,7 @@ export function initScriptsFolder(addressSpace) {
                     organizedBy: addressSpace.rootFolder.objects.scripts
                 });
             file_transfer.installFileType(scriptFile, {
-                filename: "directoryPath" + file
+                filename: directoryPath + '/' + file
             });
             addressSpace.getOwnNamespace().addMethod(scriptFile, Options.executeScriptOptions)
                 .bindMethod(executeScript);
@@ -40,31 +40,39 @@ export function initScriptsFolder(addressSpace) {
 
 export function executeScript(inputArguments,context,callback) {
 
-    let scriptName = context.object.$fileData.filename
-    let scriptExtension = scriptName.substring(scriptName.length - 2)
-    console.log(scriptExtension)
-    let execCB = (error, stdout, stderr) => {
-        if (error) {
-            console.log(`error: ${error.message}`);
-            return;
-        }
-    };
-
-    switch(scriptExtension) {
-        case "ts":
-            exec(`ts-node ${scriptName}`, execCB);
-            break
-        case "py":
-            exec(`python3 ${scriptName}`, execCB);
-            break
+    const scriptOpts = {
+        shell: true,
+        detached: true
     }
 
-    const callMethodResult = {
+    const scriptName = context.object.$fileData.filename
+    const scriptExtension = scriptName.substring(scriptName.length - 2)
+
+    const commands = {
+        "ts": "ts-node",
+        "py": "python3",
+        "js": "node",
+        "sh": "sh",
+    };
+
+    try {
+        spawn(commands[scriptExtension], [scriptName], scriptOpts);
+    } catch {
+        console.error("Extension not recognized")
+        callback(null,{
+            statusCode: opcua.StatusCodes.Bad,
+            outputArguments: [{
+                dataType: opcua.DataType.String,
+                value : "Extension not recognized"
+            }]
+        });
+    }
+
+    callback(null,{
         statusCode: opcua.StatusCodes.Good,
         outputArguments: [{
             dataType: opcua.DataType.String,
             value : "OK"
         }]
-    };
-    callback(null,callMethodResult);
+    });
 }
