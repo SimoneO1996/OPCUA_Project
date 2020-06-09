@@ -12,9 +12,14 @@ async function get_method_inputs(params){
      question = {
       type: 'input',
       name: 'param',
-      message: `Please enter the param (name: ${params[x].name} , type: ${modules.opcua.DataType[params[x].type]})`
+      message: `Please enter the param (name: ${params[x].name} , type: ${modules.opcua.DataType[params[x].type]})`,
+      suffix: "(type cancel to undo operation)"
     }
     await modules.inquirer.prompt(question).then(async answers => {
+      if(answers.param == "cancel"){
+        Arguments = undefined
+        return
+      }
       Arguments.push({
           dataType: params[x].type,
           value: answers.param
@@ -33,8 +38,9 @@ async function exec_standard_method(session,method,file_node){
         type: 'input',
         name: 'num_bytes',
         message: `Please enter the number of bytes you want to read`,
+        suffix: "(type cancel to undo operation)",
         validate: function(num_bytes){
-          if(parseInt(num_bytes) != NaN){
+          if(!isNaN(parseInt(num_bytes)) || num_bytes == "cancel"){
             return true
           }
           else {
@@ -43,7 +49,13 @@ async function exec_standard_method(session,method,file_node){
         }
       }
       await modules.inquirer.prompt(question_read).then(async answers => {
-        result = await utility.read_file(session,file_node,parseInt(answers.num_bytes))
+        if(answers.num_bytes != "cancel"){
+          console.log(parseInt(answers.num_bytes))
+          result = await utility.read_file(session,file_node,parseInt(answers.num_bytes))
+        }
+        else {
+          result = "operation undo"
+        }
       })
       break
     case "Write":
@@ -51,8 +63,9 @@ async function exec_standard_method(session,method,file_node){
         type: 'input',
         name: 'file',
         message: `Please enter the relative path of the file`,
+        suffix: "(type cancel to undo operation)",
         validate: function(file){
-          if (modules.fs.existsSync(file)) {
+          if (modules.fs.existsSync(file) || file == "cancel") {
             return true
           }
           else {
@@ -61,7 +74,12 @@ async function exec_standard_method(session,method,file_node){
         }
       }
       await modules.inquirer.prompt(question_write).then(async answers => {
-        result = await utility.write_file(session,file_node,answers.file)
+        if(answers.num_bytes != "cancel"){
+          result = await utility.write_file(session,file_node,answers.file)
+        }
+        else{
+          result = "operation undo"
+        }
       })
       
       break
@@ -131,13 +149,17 @@ async function main() {
             else{
               var params = await utility.get_method_params(session,answers.Nodes)
               var inputs = await get_method_inputs(params)
-              var method_to_call = {
-                objectId: object_navigated,
-                methodId: answers.Nodes.NodeAddress,
-                inputArguments: inputs
+              if(inputs != undefined){
+                var method_to_call = {
+                  objectId: object_navigated,
+                  methodId: answers.Nodes.NodeAddress,
+                  inputArguments: inputs
+                }
+                var result = await utility.call_method(session,method_to_call)
+                console.log(`status = ${result.status}; result = ${result.outputArguments}`)
               }
-              var result = await utility.call_method(session,method_to_call)
-              console.log(`status = ${result.status}; result = ${result.outputArguments}`)
+              console.log("operation undo")
+                
             }
             nodes = await utility.navigate(session,object_navigated)
             nodes.push({
