@@ -95,8 +95,7 @@ export async function write_file(session,file_node,file_to_write){
     const clientFile = new modules.filetransfer.ClientFile(session, file_node);
     const mode = modules.filetransfer.OpenFileMode.Write;
     await clientFile.open(mode);
-    var contents = modules.fs.readFileSync(file_to_write, 'utf8');
-    const DataToWrite = Buffer.from(contents);
+    var DataToWrite = modules.fs.readFileSync(file_to_write);
     await clientFile.write(DataToWrite)
     await clientFile.close();
     return "file written"

@@ -50,7 +50,7 @@ async function exec_standard_method(session,method,file_node){
      var question_write = {
         type: 'input',
         name: 'file',
-        message: `Please enter the number of bytes you want to read`,
+        message: `Please enter the relative path of the file`,
         validate: function(file){
           if (modules.fs.existsSync(file)) {
             return true
@@ -103,7 +103,9 @@ async function main() {
 
       nodes.push({
         name: "Stop",
-        value: "Stop"
+        value: {
+          nodeClass: "Stop"
+        }
       })
      
       navigate_question = {
@@ -114,16 +116,17 @@ async function main() {
       }
   
       await modules.inquirer.prompt(navigate_question).then(async answers => {
-        if(answers.Nodes == 'Stop' ){
-          navigate = false
-        }
-        else if(answers.Nodes == 'ObjectsFolder'){
-          nodes = await utility.navigate(session,answers.Nodes)
-        }
-        else {
-          if(answers.Nodes.nodeClass == modules.opcua.NodeClass.Method){
+
+        switch(answers.Nodes.nodeClass){
+          case "Stop":
+            navigate = false
+            break
+          case "ObjectsFolder":
+            nodes = await utility.navigate(session,'ObjectsFolder')
+            break
+          case modules.opcua.NodeClass.Method.toString():
             if(answers.Nodes.name.name == "Read" || answers.Nodes.name.name == "Write"){
-                console.log(await exec_standard_method(session,answers.Nodes,object_navigated))
+              console.log(await exec_standard_method(session,answers.Nodes,object_navigated))
             }
             else{
               var params = await utility.get_method_params(session,answers.Nodes)
@@ -136,19 +139,24 @@ async function main() {
               var result = await utility.call_method(session,method_to_call)
               console.log(`status = ${result.status}; result = ${result.outputArguments}`)
             }
-            nodes.pop()
+            nodes = await utility.navigate(session,object_navigated)
+            nodes.push({
+              name: "Return to ObjectsFolder",
+              value: {nodeClass: "ObjectsFolder"}
+            })
+            break;
+          case modules.opcua.NodeClass.Object.toString():
             
-            
-          }
-          else{
             object_navigated = answers.Nodes.NodeAddress
             nodes = await utility.navigate(session,answers.Nodes.NodeAddress)
             nodes.push({
-            name: "Return to ObjectsFolder",
-            value: "ObjectsFolder"
-          })
-          }
-          
+              name: "Return to ObjectsFolder",
+              value: {nodeClass: "ObjectsFolder"}
+            })
+            break
+          default:
+            console.log(`Nodes class: ${modules.opcua.NodeClass[answers.Nodes.nodeClass]} not implemented in the client `)
+            nodes.pop()
         }
         
         });
