@@ -1,7 +1,6 @@
 import * as modules from './package_export';
 import * as utility from './opcua_utility'
 
-const endpointUrl = "opc.tcp://192.168.1.53:4334/UA/Prova";
 
 
 
