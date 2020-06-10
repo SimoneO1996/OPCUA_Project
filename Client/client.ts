@@ -94,125 +94,141 @@ var options = {
   endpoint_must_exist: false,
 };
 
-const client = modules.opcua.OPCUAClient.create(options);
+
 
 
 async function main() {
-  try {
+    var client
     var session
     var navigate: boolean = true
     var object_navigated
     var navigate_question
+    var nodes = []
 
     var initial_question = [{
       type: 'input',
       name: 'Endpoint',
       message: 'Please enter the OPCUA Server EndPoint',
     }]
-
-    await modules.inquirer.prompt(initial_question).then(async answers => {
-    session = await utility.connect(answers.Endpoint,client)
-    });
-
-    var nodes = await utility.navigate(session,"ObjectsFolder")
-
-
-    do {
-
-      nodes.push({
-        name: "Stop",
-        value: {
-          nodeClass: "Stop"
-        }
-      })
-     
-      navigate_question = {
-        type: 'list',
-        name: 'Nodes',
-        message: 'Select the nodes you want to navigate, if you choose a method it will be executed',
-        choices: nodes
+    
+    while(session == undefined){
+      try{
+        client = modules.opcua.OPCUAClient.create(options);
+        await modules.inquirer.prompt(initial_question).then(async answers => {
+          session = await utility.connect(answers.Endpoint,client)
+          });
       }
-  
-      await modules.inquirer.prompt(navigate_question).then(async answers => {
-
-        switch(answers.Nodes.nodeClass){
-          case "Stop":
-            navigate = false
-            break
-          case "ObjectsFolder":
-            nodes = await utility.navigate(session,'ObjectsFolder')
-            break
-          case modules.opcua.NodeClass.Method.toString():
-            if(answers.Nodes.name.name == "Read" || answers.Nodes.name.name == "Write"){
-              console.log(await exec_standard_method(session,answers.Nodes,object_navigated))
-            }
-            else{
-              var params = await utility.get_method_params(session,answers.Nodes)
-              var inputs = await get_method_inputs(params)
-              if(inputs != undefined){
-                var method_to_call = {
-                  objectId: object_navigated,
-                  methodId: answers.Nodes.NodeAddress,
-                  inputArguments: inputs
-                }
-                var result = await utility.call_method(session,method_to_call)
-                console.log(`status = ${result.status}; result = ${result.outputArguments}`)
-              }
-              console.log("operation undo")
-                
-            }
-            nodes = await utility.navigate(session,object_navigated)
-            nodes.push({
-              name: "Return to ObjectsFolder",
-              value: {nodeClass: "ObjectsFolder"}
-            })
-            break;
-          case modules.opcua.NodeClass.Object.toString():
-            
-            object_navigated = answers.Nodes.NodeAddress
-            nodes = await utility.navigate(session,answers.Nodes.NodeAddress)
-            nodes.push({
-              name: "Return to ObjectsFolder",
-              value: {nodeClass: "ObjectsFolder"}
-            })
-            break
-          default:
-            console.log(`Nodes class: ${modules.opcua.NodeClass[answers.Nodes.nodeClass]} not implemented in the client `)
-            nodes.pop()
+      catch (err){
+        console.log(err.message)
+      }
+    }
+   
+    try{
+      nodes = await utility.navigate(session,"ObjectsFolder")
+    }
+    catch(err){
+      console.log(err.message)
+      nodes.push({
+        name: "Retry browse ObjectsFolder",
+        value: {
+          nodeClass: "ObjectsFolder"
+        } 
+        })
+    }
+    
+    do{
+      try{
+        nodes.push({
+          name: "Stop",
+          value: {
+            nodeClass: "Stop"
+          }
+        })
+      
+      
+        navigate_question = {
+          type: 'list',
+          name: 'Nodes',
+          message: 'Select the nodes you want to navigate, if you choose a method it will be executed',
+          choices: nodes
         }
-        
-        });
+    
+        await modules.inquirer.prompt(navigate_question).then(async answers => {
 
+          switch(answers.Nodes.nodeClass){
+            case "Stop":
+              navigate = false
+              break
+            case "ObjectsFolder":
+              nodes = await utility.navigate(session,'ObjectsFolder')
+              break
+            case modules.opcua.NodeClass.Method.toString():
+              if(answers.Nodes.name.name == "Read" || answers.Nodes.name.name == "Write"){
+                console.log(await exec_standard_method(session,answers.Nodes,object_navigated))
+              }
+              else{
+                var params = await utility.get_method_params(session,answers.Nodes)
+                var inputs = await get_method_inputs(params)
+                if(inputs != undefined){
+                  var method_to_call = {
+                    objectId: object_navigated,
+                    methodId: answers.Nodes.NodeAddress,
+                    inputArguments: inputs
+                  }
+                  var result = await utility.call_method(session,method_to_call)
+                  console.log(`status = ${result.status}; result = ${result.outputArguments}`)
+                }
+                else{
+                  console.log("operation undo")
+                }
+                
+                  
+              }
+              nodes = await utility.navigate(session,object_navigated)
+              nodes.push({
+                name: "Return to ObjectsFolder",
+                value: {nodeClass: "ObjectsFolder"}
+              })
+              break;
+            case modules.opcua.NodeClass.Object.toString():
+              
+              object_navigated = answers.Nodes.NodeAddress
+              nodes = await utility.navigate(session,answers.Nodes.NodeAddress)
+              nodes.push({
+                name: "Return to ObjectsFolder",
+                value: {nodeClass: "ObjectsFolder"}
+              })
+              break
+            case modules.opcua.NodeClass.Variable.toString():
+              var value = await session.readVariableValue(answers.Nodes.NodeAddress)
+              console.log(value.statusCode.toString())
+              console.log(value.value.toString())
+              nodes.pop()
+              break
+            default:
+              console.log(`Nodes class: ${modules.opcua.NodeClass[answers.Nodes.nodeClass]} not implemented in the client `)
+              nodes.pop()
+          }
+          
+          });
+        }
+      catch(err){
+        console.log(err.message)
+        nodes.pop()
+      }
+    
     }
     while(navigate)
     
-
-    
-    //var prova = await utility.navigate(session,"ns=1;s=prova.ts")
-
-    //console.log(prova)
-
-    var method_to_call = {
-      objectId: "ns=1;i=1001",
-      methodId: "ns=1;i=1002",
-      inputArguments: [{dataType: modules.opcua.DataType.String , value: "cazzo.sh" }]
+    try{
+      utility.close_connection(session,client)
+    }
+    catch(err){
+      console.log(err.message)
+      process.exit(-1)
     }
 
-    //var prova1 = await utility.call_method(session,method_to_call)
-
-    //var prova2 = await utility.read_file(session,"ns=1;s=prova.ts",6)
-    //console.log(prova2)
-
-   // var prova3 = await utility.write_file(session,"ns=1;s=prova.ts","./log.txt")
-    //console.log(prova3)
-
-
-    utility.close_connection(session,client)
-
-  }
-  
-  catch (err) {
-    console.log("An error has occured : ",err);
-  }
+    process.exit(0)
+    
 }
 main();
