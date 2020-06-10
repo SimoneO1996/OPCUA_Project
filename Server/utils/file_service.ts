@@ -50,7 +50,7 @@ export function executeScript(inputArguments,context,callback) {
 
     const commands = {
         "ts": "ts-node",
-        "py": "python3",
+        "py": "python3 -B",
         "js": "node",
         "sh": "sh",
     };

@@ -4,8 +4,6 @@ const fs = require('fs');
 import  Options  from "../constants/options"
 import { executeScript, initScriptsFolder } from "./file_service"
 
-let date_ob = new Date();
-
 export function build_my_address_space(server) {
     const addressSpace = server.engine.addressSpace;
     const namespace = addressSpace.getOwnNamespace();
@@ -34,6 +32,7 @@ export function build_my_address_space(server) {
             
             callMethodResult = {
                 outputArguments: [{
+                    statusCode: opcua.StatusCodes.Good,
                     dataType: opcua.DataType.String,
                     value : "File added correctly"
                 }]
@@ -43,6 +42,7 @@ export function build_my_address_space(server) {
             console.log(err)
             callMethodResult = {
                 outputArguments: [{
+                    statusCode: opcua.StatusCodes.Bad,
                     dataType: opcua.DataType.String,
                     value : err.message
                 }]
@@ -52,47 +52,7 @@ export function build_my_address_space(server) {
             callback(err,callMethodResult);
         }
     }
-/*
-    const addFolder = (inputArguments, context, callback) => {
-        let callMethodResult
 
-        try {   
-
-            const folder = namespace.addFolder(addressSpace.rootFolder.objects.scripts, {
-                browseName: inputArguments[0].value,
-                nodeId: "s="+inputArguments[0].value,
-            });
-
-            namespace.addMethod(folder, Options.addFileOptions)
-                .bindMethod(addFile)
-
-            namespace.addMethod(folder, Options.removeFileOptions)
-                .bindMethod(removeFile)
-            
-            callMethodResult = {
-                statusCode: opcua.StatusCodes.Good,
-                outputArguments: [{
-                    dataType: opcua.DataType.String,
-                    value : "File added correctly"
-                }]
-            }
-        }
-        catch(err){
-            console.log(err)
-            callMethodResult = {
-                statusCode: opcua.StatusCodes.Bad,
-                outputArguments: [{
-                    dataType: opcua.DataType.String,
-                    value : err.message
-                }]
-            };
-        }
-        finally{
-            callback(null,callMethodResult);
-        }
-        
-    }
-*/
     const removeFile = (inputArguments, context, callback) => {
 
         let nodeId = "ns=" + namespace.index + ";s="+inputArguments[0].value
@@ -103,6 +63,7 @@ export function build_my_address_space(server) {
             fs.unlinkSync(path)
             callMethodResult = {
                 outputArguments: [{
+                    statusCode: opcua.StatusCodes.Good,
                     dataType: opcua.DataType.String,
                     value : "File removed correctly"
                 }]
@@ -111,6 +72,7 @@ export function build_my_address_space(server) {
             console.log(err)
             callMethodResult = {
                 outputArguments: [{
+                    statusCode: opcua.StatusCodes.Bad,
                     dataType: opcua.DataType.String,
                     value : "Couldn't remove file, check if it exists"
                 }]
@@ -142,19 +104,6 @@ export function build_my_address_space(server) {
     namespace.addMethod(folder, Options.removeFileOptions)
         .bindMethod(removeFile)
 
-    namespace.addVariable({
-        propertyOf: device,
-        browseName: "seconds",
-        dataType: "String",
-        value: {
-            get: function() {
-                return new opcua.Variant({
-                    dataType: opcua.DataType.Int32,
-                    value: date_ob.getSeconds()
-                });
-            }
-        }
-    });
 }
 
 
