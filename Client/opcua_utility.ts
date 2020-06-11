@@ -1,18 +1,41 @@
 
 import * as modules from './package_export';
+
 async function timeout(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
   
-  
-  
 
-export async function connect(endpointUrl: string,client){
+export async function get_endpoints(endpointUrl: string, client){
+    let endpoints = []
 
     await client.connect(endpointUrl);
 
 
+    endpoints = (await client.getEndpoints({endpointUrl: endpointUrl })).map(endpoint => ({
 
+        name:  `endpoint: ${endpoint.endpointUrl} , security mode : ${modules.opcua.MessageSecurityMode[endpoint.securityMode]}, securityPolicy : ${endpoint.securityPolicyUri.split("#")[1]} `,
+        value : {
+            endpointUrl: endpoint.endpointUrl, 
+            securityMode: endpoint.securityMode,
+            securityPolicy: endpoint.securityPolicyUri
+        }
+
+        
+        
+    }))
+
+    await client.disconnect();
+
+    return endpoints
+}
+  
+
+export async function connect(client,endpointUrl){
+    
+    await client.connect(endpointUrl);
+    
+    
     // step 2 : createSession
     const session = await client.createSession();
 

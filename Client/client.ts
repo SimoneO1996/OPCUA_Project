@@ -24,6 +24,7 @@ async function get_method_inputs(params){
           value: answers.param
         })
     })
+    
   }
   return Arguments
 
@@ -91,6 +92,10 @@ var options = {
       maxRetry: 1
   },
   endpoint_must_exist: false,
+  keepSessionAlive:  true,
+  requestedSessionTimeout: 1200000,
+  securityMode: modules.opcua.MessageSecurityMode.NONE,
+  securityPolicy: modules.opcua.MessageSecurityMode.None
 };
 
 
@@ -107,15 +112,30 @@ async function main() {
     var initial_question = [{
       type: 'input',
       name: 'Endpoint',
-      message: 'Please enter the OPCUA Server EndPoint',
+      message: 'Please enter the OPCUA Server Discovery EndPoint',
     }]
     
     while(session == undefined){
       try{
         client = modules.opcua.OPCUAClient.create(options);
-        await modules.inquirer.prompt(initial_question).then(async answers => {
-          session = await utility.connect(answers.Endpoint,client)
-          });
+        let answers = await modules.inquirer.prompt(initial_question)
+        let endpoints = await utility.get_endpoints(answers.Endpoint,client)
+        var choose_endpoints = [{
+          type: 'list',
+          name: 'Endpoint',
+          message: 'Please select Endpoint',
+          choices: endpoints
+        }]
+        answers = await modules.inquirer.prompt(choose_endpoints)
+        console.log(answers)
+        options.securityMode = answers.Endpoint.securityMode
+        options.securityPolicy = answers.Endpoint.securityPolicy
+        console.log(options)
+        client = modules.opcua.OPCUAClient.create(options);
+
+        session = await utility.connect(client,answers.Endpoint.endpointUrl)
+     
+         
       }
       catch (err){
         console.log(err.message)
@@ -123,7 +143,7 @@ async function main() {
     }
    
     try{
-      nodes = await utility.navigate(session,"ObjectsFolder")
+      nodes = await utility.navigate(session,"RootFolder")
     }
     catch(err){
       console.log(err.message)
@@ -152,7 +172,7 @@ async function main() {
           choices: nodes
         }
     
-        await modules.inquirer.prompt(navigate_question).then(async answers => {
+        let answers = await modules.inquirer.prompt(navigate_question)
 
           switch(answers.Nodes.nodeClass){
             case "Stop":
@@ -208,8 +228,6 @@ async function main() {
               console.log(`Nodes class: ${modules.opcua.NodeClass[answers.Nodes.nodeClass]} not implemented in the client `)
               nodes.pop()
           }
-          
-          });
         }
       catch(err){
         console.log(err.message)
