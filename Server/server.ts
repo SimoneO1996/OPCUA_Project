@@ -28,6 +28,7 @@ server.initialize(() =>{
 });
 
 process.on('SIGINT', function () {
+    console.log("Server Shutting Down...")
     process.exit(0);
 });
 
