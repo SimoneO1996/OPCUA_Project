@@ -2,4 +2,6 @@
 /Server/node_modules
 node_modules
 Server/scripts
+Server/firmware
 .idea
+Server/certs

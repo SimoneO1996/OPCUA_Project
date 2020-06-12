@@ -13,10 +13,18 @@ const opcua = require("node-opcua");
  */
 export function initFolder(addressSpace, folderName) {
     const directoryPath = path.join(__dirname, '..', folderName);
+    let folderObject;
     // Creates the directory if it doesn't exists
     if (!fs.existsSync(directoryPath)){
         fs.mkdirSync(directoryPath);
     }
+
+    if (folderName == "firmware")
+        folderObject = addressSpace.rootFolder.objects.firmware
+    else if (folderName == "scripts")
+        folderObject = addressSpace.rootFolder.objects.scripts
+    else
+        throw new Error("Wrong Folder Name")
 
     fs.readdir(directoryPath, function (err, files) {
 
@@ -28,7 +36,7 @@ export function initFolder(addressSpace, folderName) {
                 .instantiate({
                     nodeId: "s=" + filename,
                     browseName: filename,
-                    organizedBy: addressSpace.rootFolder.objects + '.' + folderName
+                    organizedBy: folderObject
                 });
             file_transfer.installFileType(scriptFile, {
                 filename: path.join(directoryPath, filename)
@@ -55,7 +63,7 @@ export function executeScript(inputArguments, context, callback) {
     const command = ext_to_cmd[scriptExtension] + " " + scriptName
 
     const output = fs.createWriteStream(path.join(directoryPath, scriptName.replace(scriptExtension, "txt")));
-    const errorOutput = fs.createWriteStream(directoryPath, "err_" + scriptName.replace(scriptExtension, "txt"));
+    const errorOutput = fs.createWriteStream(path.join(directoryPath, "err_" + scriptName.replace(scriptExtension, "txt")))
     const logger = new cons.Console({ stdout: output, stderr: errorOutput });
 
     try {
