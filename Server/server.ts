@@ -1,3 +1,5 @@
+import * as path from "path";
+
 const opcua = require("node-opcua");
 import { build_my_address_space } from "./utils/address_space_builder"
 import "./utils/file_service"
@@ -9,7 +11,11 @@ const server = new opcua.OPCUAServer({
         productName: "RaspUAServer1",
         buildNumber: "1",
         buildDate: new Date()
-    }
+    },
+    serverCertificateManager: new opcua.OPCUACertificateManager({
+        automaticallyAcceptUnknownCertificate: true,
+        rootFolder: path.join(__dirname, "certs")
+    })
 });
 
 server.initialize(() =>{

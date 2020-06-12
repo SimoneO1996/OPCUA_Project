@@ -55,52 +55,52 @@ export function executeScript(inputArguments, context, callback) {
     const command = ext_to_cmd[scriptExtension] + " " + scriptName
 
     const output = fs.createWriteStream(path.join(directoryPath, scriptName.replace(scriptExtension, "txt")));
-    const errorOutput = fs.createWriteStream(directoryPath, "err_" + scriptName.replace(scriptExtension, "txt")));
-const logger = new cons.Console({ stdout: output, stderr: errorOutput });
+    const errorOutput = fs.createWriteStream(directoryPath, "err_" + scriptName.replace(scriptExtension, "txt"));
+    const logger = new cons.Console({ stdout: output, stderr: errorOutput });
 
-try {
-    if(!(scriptExtension in ext_to_cmd)) {
-        throw new Error("Extension not recognized")
-    }
-    else if (context.object.name == "scripts") {
-        exec(command, (err, stdout, stderr) => {
-            if (err) {
-                logger.error(stderr);
-                return;
-            }
-            logger.log(stdout);
-        });
-        callback(null,{
-            statusCode: opcua.StatusCodes.Good,
+    try {
+        if(!(scriptExtension in ext_to_cmd)) {
+            throw new Error("Extension not recognized")
+        }
+        else if (context.object.name == "scripts") {
+            exec(command, (err, stdout, stderr) => {
+                if (err) {
+                    logger.error(stderr);
+                    return;
+                }
+                logger.log(stdout);
+            });
+            callback(null,{
+                statusCode: opcua.StatusCodes.Good,
+                outputArguments: [{
+                    dataType: opcua.DataType.String,
+                    value : "OK"
+                }]
+            });
+        } else if (context.object.name == "firmware") {
+            execSync(command, (err, stdout, stderr) => {
+                if (err) {
+                    logger.error(stderr);
+                    return;
+                }
+                logger.log(stdout);
+            });
+            callback(null,{
+                statusCode: opcua.StatusCodes.Good,
+                outputArguments: [{
+                    dataType: opcua.DataType.String,
+                    value : "OK"
+                }]
+            });
+        }
+    } catch(err) {
+        console.error(err.message)
+        callback(err,{
+            statusCode: opcua.StatusCodes.Bad,
             outputArguments: [{
                 dataType: opcua.DataType.String,
-                value : "OK"
-            }]
-        });
-    } else if (context.object.name == "firmware") {
-        execSync(command, (err, stdout, stderr) => {
-            if (err) {
-                logger.error(stderr);
-                return;
-            }
-            logger.log(stdout);
-        });
-        callback(null,{
-            statusCode: opcua.StatusCodes.Good,
-            outputArguments: [{
-                dataType: opcua.DataType.String,
-                value : "OK"
+                value : err.message
             }]
         });
     }
-} catch(err) {
-    console.error(err.message)
-    callback(err,{
-        statusCode: opcua.StatusCodes.Bad,
-        outputArguments: [{
-            dataType: opcua.DataType.String,
-            value : err.message
-        }]
-    });
-}
 }
