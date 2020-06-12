@@ -127,10 +127,8 @@ async function main() {
           choices: endpoints
         }]
         answers = await modules.inquirer.prompt(choose_endpoints)
-        console.log(answers)
         options.securityMode = answers.Endpoint.securityMode
         options.securityPolicy = answers.Endpoint.securityPolicy
-        console.log(options)
         client = modules.opcua.OPCUAClient.create(options);
 
         session = await utility.connect(client,answers.Endpoint.endpointUrl)
@@ -230,6 +228,14 @@ async function main() {
           }
         }
       catch(err){
+        if(err.message.includes("Invalid Channel")){
+          console.log("Seems that the Server has gone down please contact the administrator. Error Message: " + err.message)
+          process.exit(0)
+        }
+        if(err.message.includes("Connection Break")){
+          console.log("Seems that the Server has gone down please contact the administrator. Error Message: " + err.message)
+          process.exit(0)
+        }
         console.log(err.message)
         nodes.pop()
       }
@@ -245,7 +251,13 @@ async function main() {
       process.exit(-1)
     }
 
+    
     process.exit(0)
     
 }
+
+process.on('SIGINT', function () {
+  process.exit(0);
+});
+
 main();
