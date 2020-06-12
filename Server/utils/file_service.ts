@@ -49,9 +49,10 @@ export function initFolder(addressSpace, folderName) {
 
 export function executeScript(inputArguments, context, callback) {
 
-    const scriptName = context.object.$fileData.filename
-    const scriptExtension = scriptName.substring(scriptName.length - 2)
-    const directoryPath = path.join(__dirname, '..', 'logs');
+    const scriptPath = context.object.$fileData.filename
+    const scriptExtension = scriptPath.substring(scriptPath.length - 2)
+    const logsPath = path.join(__dirname, '..', 'logs');
+    const scriptName = path.basename(scriptPath)
 
     const ext_to_cmd = {
         "ts": "ts-node",
@@ -60,18 +61,25 @@ export function executeScript(inputArguments, context, callback) {
         "sh": "sh",
     };
 
-    const command = ext_to_cmd[scriptExtension] + " " + scriptName
+    const command = ext_to_cmd[scriptExtension] + " " + scriptPath
 
-    const output = fs.createWriteStream(path.join(directoryPath, scriptName.replace(scriptExtension, "txt")));
-    const errorOutput = fs.createWriteStream(path.join(directoryPath, "err_" + scriptName.replace(scriptExtension, "txt")))
+    const logFileName = scriptName.substr(0, scriptName.lastIndexOf(".")) + ".txt";
+    const errFileName = "err_" + scriptName.substr(0, scriptName.lastIndexOf(".")) + ".txt";
+
+    if (!fs.existsSync(logsPath)){
+        fs.mkdirSync(logsPath);
+    }
+
+    const output = fs.createWriteStream(path.join(logsPath, logFileName));
+    const errorOutput = fs.createWriteStream(path.join(logsPath, errFileName))
     const logger = new cons.Console({ stdout: output, stderr: errorOutput });
 
     try {
+
         if(!(scriptExtension in ext_to_cmd)) {
             throw new Error("Extension not recognized")
-        }
-        else if (context.object.name == "scripts") {
-            exec(command, (err, stdout, stderr) => {
+        } else {
+            let res = exec(command, (err, stdout, stderr) => {
                 if (err) {
                     logger.error(stderr);
                     return;
@@ -82,22 +90,7 @@ export function executeScript(inputArguments, context, callback) {
                 statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{
                     dataType: opcua.DataType.String,
-                    value : "OK"
-                }]
-            });
-        } else if (context.object.name == "firmware") {
-            execSync(command, (err, stdout, stderr) => {
-                if (err) {
-                    logger.error(stderr);
-                    return;
-                }
-                logger.log(stdout);
-            });
-            callback(null,{
-                statusCode: opcua.StatusCodes.Good,
-                outputArguments: [{
-                    dataType: opcua.DataType.String,
-                    value : "OK"
+                    value : res.stdout
                 }]
             });
         }
