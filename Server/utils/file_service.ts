@@ -102,6 +102,7 @@ export function executeScript(inputArguments, context, callback) {
                 logger.log(stdout);
             });
             PID_Current = res.pid
+            console.log(res.pid)
             callback(null,{
                 statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{
