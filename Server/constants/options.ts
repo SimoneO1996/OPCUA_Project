@@ -24,29 +24,17 @@ namespace Options {
 
     browseName: "Execute Script",
 
-    outputArguments: [{
-      name:"out",
-      description:{ text: "Operation Outcome" },
-      dataType: opcua.DataType.String ,
-      valueRank: 1
-    }]
-  }
-
-  export const addFolderOptions = {
-
-    browseName: "AddFolder",
-
     inputArguments:  [
       {
-        name:"Folder Name",
-        description: { text: "Name of the folder to add" },
-        dataType: opcua.DataType.String
+        name:"Sync/Async",
+        description: { text: "0: Async, 1: Sync" },
+        dataType: opcua.DataType.UInt16
       }
     ],
 
     outputArguments: [{
-      name:"Operation Outcome",
-      description:{ text: "Success or Failure of the add operation" },
+      name:"out",
+      description:{ text: "Operation Outcome" },
       dataType: opcua.DataType.String ,
       valueRank: 1
     }]

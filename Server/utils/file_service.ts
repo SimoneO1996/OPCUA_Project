@@ -11,20 +11,14 @@ const opcua = require("node-opcua");
  * @description:
  *      Scans the scripts directory and loads all existing files in the address space
  */
-export function initFolder(addressSpace, folderName) {
-    const directoryPath = path.join(__dirname, '..', folderName);
+export function initFolder(addressSpace) {
+    const directoryPath = path.join(__dirname, '..', 'scripts');
     let folderObject;
     // Creates the directory if it doesn't exists
     if (!fs.existsSync(directoryPath)){
         fs.mkdirSync(directoryPath);
     }
-
-    if (folderName == "firmware")
-        folderObject = addressSpace.rootFolder.objects.firmware
-    else if (folderName == "scripts")
-        folderObject = addressSpace.rootFolder.objects.scripts
-    else
-        throw new Error("Wrong Folder Name")
+    folderObject = addressSpace.rootFolder.objects.scripts
 
     fs.readdir(directoryPath, function (err, files) {
 
@@ -78,8 +72,8 @@ export function executeScript(inputArguments, context, callback) {
 
         if(!(scriptExtension in ext_to_cmd)) {
             throw new Error("Extension not recognized")
-        } else {
-            let res = exec(command, (err, stdout, stderr) => {
+        } else if (inputArguments[0].value == 0) {
+            exec(command, (err, stdout, stderr) => {
                 if (err) {
                     logger.error(stderr);
                     return;
@@ -90,7 +84,16 @@ export function executeScript(inputArguments, context, callback) {
                 statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{
                     dataType: opcua.DataType.String,
-                    value : res.stdout
+                    value : "Script Executing"
+                }]
+            });
+        } else {
+            const res = execSync(command);
+            callback(null,{
+                statusCode: opcua.StatusCodes.Good,
+                outputArguments: [{
+                    dataType: opcua.DataType.String,
+                    value : res.toString()
                 }]
             });
         }

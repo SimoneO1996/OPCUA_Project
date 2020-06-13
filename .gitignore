@@ -5,3 +5,4 @@ Server/scripts
 Server/firmware
 .idea
 Server/certs
+Client/pki

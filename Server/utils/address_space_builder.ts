@@ -82,13 +82,9 @@ export function build_my_address_space(server) {
     const scriptFolder = namespace.addFolder(addressSpace.rootFolder.objects, {
         browseName: "Scripts"
     });
-    const firmwareFolder = namespace.addFolder(addressSpace.rootFolder.objects, {
-        browseName: "Firmware"
-    });
 
     try {
-        initFolder(addressSpace, 'scripts')
-        initFolder(addressSpace, 'firmware')
+        initFolder(addressSpace)
     } catch(err) {
         console.log(err)
     }
@@ -97,11 +93,5 @@ export function build_my_address_space(server) {
         .bindMethod(addFile)
 
     namespace.addMethod(scriptFolder, Options.removeFileOptions)
-        .bindMethod(removeFile)
-
-    namespace.addMethod(firmwareFolder, Options.addFileOptions)
-        .bindMethod(addFile)
-
-    namespace.addMethod(firmwareFolder, Options.removeFileOptions)
         .bindMethod(removeFile)
 }
