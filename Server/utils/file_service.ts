@@ -1,4 +1,5 @@
 import Options from "../constants/options";
+import { spawn } from "child_process";
 
 const { exec, execSync } = require("child_process");
 const cons = require('console')
@@ -87,22 +88,16 @@ export function executeScript(inputArguments, context, callback) {
             throw new Error("Extension not recognized")
         } else if (inputArguments[0].value == 0) {
             if (PID_Current !== undefined) {
+                console.log(PID_Current)
                 try {
-                    process.kill(PID_Current)
-                } catch {
-                    console.log("Process is not running")
+                    process.kill(-PID_Current)
+                } catch(err) {
+                    console.log(err.message)
                 }
                 
             }
-            const res = exec(command, (err, stdout, stderr) => {
-                if (err) {
-                    logger.error(stderr);
-                    return;
-                }
-                logger.log(stdout);
-            });
+            const res = spawn(command,{detached: true, shell: true})
             PID_Current = res.pid
-            console.log(res.pid)
             callback(null,{
                 statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{

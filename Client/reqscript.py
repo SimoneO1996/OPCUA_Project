@@ -15,3 +15,6 @@ if(r.headers['Content-Type'] == 'application/json'):
     print(json.dumps(data['ip']))
 else:
     print('Response format is not JSON')
+
+while(True):
+    print("sono vivo")
