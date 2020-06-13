@@ -65,11 +65,15 @@ export function executeScript(inputArguments, context, callback) {
     }
 
     if (!fs.existsSync(path.join(logsPath, logFileName))){
-        fs.mkdirSync(path.join(logsPath, logFileName))
+        fs.open(path.join(logsPath, logFileName), 'w', (err, file) => {
+            if (err) throw new Error("Could not create " + file)
+        })
     }
 
     if (!fs.existsSync(path.join(logsPath, errFileName))){
-        fs.mkdirSync(path.join(logsPath, errFileName))
+        fs.open(path.join(logsPath, errFileName), 'w', (err, file) => {
+            if (err) throw new Error("Could not create " + file)
+        })
 }
 
     const output = fs.createWriteStream(path.join(logsPath, logFileName));
