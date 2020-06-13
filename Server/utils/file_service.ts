@@ -64,6 +64,14 @@ export function executeScript(inputArguments, context, callback) {
         fs.mkdirSync(logsPath);
     }
 
+    if (!fs.existsSync(path.join(logsPath, logFileName))){
+        fs.mkdirSync(path.join(logsPath, logFileName))
+    }
+
+    if (!fs.existsSync(path.join(logsPath, errFileName))){
+        fs.mkdirSync(path.join(logsPath, errFileName))
+}
+
     const output = fs.createWriteStream(path.join(logsPath, logFileName));
     const errorOutput = fs.createWriteStream(path.join(logsPath, errFileName))
     const logger = new cons.Console({ stdout: output, stderr: errorOutput });
