@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const file_transfer = require("node-opcua-file-transfer");
 const opcua = require("node-opcua");
+let PID_Current;
 
 /**
  * @description:
@@ -85,13 +86,22 @@ export function executeScript(inputArguments, context, callback) {
         if(!(scriptExtension in ext_to_cmd)) {
             throw new Error("Extension not recognized")
         } else if (inputArguments[0].value == 0) {
-            exec(command, (err, stdout, stderr) => {
+            if (PID_Current !== undefined) {
+                try {
+                    process.kill(PID_Current)
+                } catch {
+                    console.log("Process is not running")
+                }
+                
+            }
+            const res = exec(command, (err, stdout, stderr) => {
                 if (err) {
                     logger.error(stderr);
                     return;
                 }
                 logger.log(stdout);
             });
+            PID_Current = res.pid
             callback(null,{
                 statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{
