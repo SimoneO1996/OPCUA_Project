@@ -11,7 +11,7 @@ async function get_method_inputs(params){
      question = {
       type: 'input',
       name: 'param',
-      message: `Please enter the param (name: ${params[x].name} , type: ${modules.opcua.DataType[params[x].type]})`,
+      message: `Please enter the param (description: ${params[x].description} , type: ${modules.opcua.DataType[params[x].type]})`,
       suffix: "(type cancel to undo operation)"
     }
     await modules.inquirer.prompt(question).then(async answers => {

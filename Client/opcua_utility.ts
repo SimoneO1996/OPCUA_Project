@@ -64,7 +64,7 @@ export async function get_method_params(session,method_node){
        var inputs_parametes = []
           for(let i= 0 ;i< Arguments.inputArguments.length; i++){
             inputs_parametes.push({
-                name : Arguments.inputArguments[i].name,
+                description : Arguments.inputArguments[i].description.text,
                 type : Arguments.inputArguments[i].dataType.value
             })
           }
