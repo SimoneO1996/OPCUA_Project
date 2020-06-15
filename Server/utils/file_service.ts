@@ -1,7 +1,7 @@
 import Options from "../constants/options";
-import { spawn } from "child_process";
-
-const { exec, execSync } = require("child_process");
+const StringDecoder = require('string_decoder').StringDecoder;
+const decoder = new StringDecoder('utf8');
+const { spawn, execSync } = require("child_process");
 const cons = require('console')
 const path = require('path');
 const fs = require('fs');
@@ -94,17 +94,36 @@ export function executeScript(inputArguments, context, callback) {
                 } catch(err) {
                     console.log(err.message)
                 }
-                
             }
-            const res = spawn(command,{detached: true, shell: true})
-            PID_Current = res.pid
-            callback(null,{
-                statusCode: opcua.StatusCodes.Good,
-                outputArguments: [{
-                    dataType: opcua.DataType.String,
-                    value : "Script Executing"
-                }]
-            });
+            try {
+                const res = spawn(command, [], {stdio: 'pipe'}) //{detached: true, shell: true})
+
+                res.stdout.on('data', (data) => {
+                    console.log(`${scriptName} logs:\n ${data.toString()}`);
+                    logger.log(`${scriptName} logs:\n ${data.toString()}`);
+                });
+                res.stderr.on('data', (data) => {
+                    logger.error(data.toString());
+                    console.error(data.toString());
+                });
+                PID_Current = res.pid
+                callback(null,{
+                    statusCode: opcua.StatusCodes.Good,
+                    outputArguments: [{
+                        dataType: opcua.DataType.String,
+                        value : "Script Executing"
+                    }]
+                });
+            } catch(err) {
+                console.error(err.message)
+                callback(null,{
+                    statusCode: opcua.StatusCodes.Bad,
+                    outputArguments: [{
+                        dataType: opcua.DataType.String,
+                        value : "Error in Async Script Execution: " + err.message
+                    }]
+                });
+            }
         } else {
             const res = execSync(command);
             callback(null,{
