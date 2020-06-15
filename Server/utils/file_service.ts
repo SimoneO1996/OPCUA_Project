@@ -1,6 +1,4 @@
 import Options from "../constants/options";
-const StringDecoder = require('string_decoder').StringDecoder;
-const decoder = new StringDecoder('utf8');
 const { spawn, execSync } = require("child_process");
 const cons = require('console')
 const path = require('path');
@@ -88,7 +86,6 @@ export function executeScript(inputArguments, context, callback) {
             throw new Error("Extension not recognized")
         } else if (inputArguments[0].value == 0) {
             if (PID_Current !== undefined) {
-                console.log(PID_Current)
                 try {
                     process.kill(-PID_Current)
                 } catch(err) {
@@ -96,15 +93,13 @@ export function executeScript(inputArguments, context, callback) {
                 }
             }
             try {
-                const res = spawn(command, [], {stdio: 'pipe'}) //{detached: true, shell: true})
+                const res = spawn(command, [], {detached: true, shell: true})
 
                 res.stdout.on('data', (data) => {
-                    console.log(`${scriptName} logs:\n ${data.toString()}`);
                     logger.log(`${scriptName} logs:\n ${data.toString()}`);
                 });
                 res.stderr.on('data', (data) => {
                     logger.error(data.toString());
-                    console.error(data.toString());
                 });
                 PID_Current = res.pid
                 callback(null,{
