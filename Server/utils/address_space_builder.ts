@@ -10,7 +10,7 @@ export function build_my_address_space(server) {
     const addressSpace = server.engine.addressSpace;
     const namespace = addressSpace.getOwnNamespace();
 
-    const addFile = (inputArguments, context, callback) => {
+    const addFileObject = (inputArguments, context, callback) => {
         const filename = inputArguments[0].value
         const directoryPath = path.join(__dirname, '../scripts');
         try {
@@ -90,7 +90,7 @@ export function build_my_address_space(server) {
     }
 
     namespace.addMethod(scriptFolder, Options.addFileOptions)
-        .bindMethod(addFile)
+        .bindMethod(addFileObject)
 
     namespace.addMethod(scriptFolder, Options.removeFileOptions)
         .bindMethod(removeFile)

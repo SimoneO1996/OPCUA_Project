@@ -2,7 +2,7 @@ const opcua = require("node-opcua");
 namespace Options {
   export const addFileOptions = {
 
-    browseName: "AddFile",
+    browseName: "AddFileObject",
 
     inputArguments:  [
       {
