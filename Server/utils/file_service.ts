@@ -131,7 +131,7 @@ export function executeScript(inputArguments, context, callback) {
         }
     } catch(err) {
         console.error(err.message)
-        callback(err,{
+        callback(null,{
             statusCode: opcua.StatusCodes.Bad,
             outputArguments: [{
                 dataType: opcua.DataType.String,

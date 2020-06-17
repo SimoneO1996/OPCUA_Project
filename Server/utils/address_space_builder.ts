@@ -41,7 +41,7 @@ export function build_my_address_space(server) {
         }
         catch(err){
             console.log(err)
-            callback(err, {
+            callback(null, {
                 statusCode: opcua.StatusCodes.Bad,
                 outputArguments: [{
                     dataType: opcua.DataType.String,
@@ -69,7 +69,7 @@ export function build_my_address_space(server) {
             });
         } catch(err) {
             console.error(err)
-            callback(err, {
+            callback(null, {
                 statusCode: opcua.StatusCodes.Bad,
                 outputArguments: [{
                     dataType: opcua.DataType.String,
