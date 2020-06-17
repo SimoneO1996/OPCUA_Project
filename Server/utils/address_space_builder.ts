@@ -32,8 +32,8 @@ export function build_my_address_space(server) {
                 .bindMethod(executeScript);
 
             callback(null, {
+                statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{
-                    statusCode: opcua.StatusCodes.Good,
                     dataType: opcua.DataType.String,
                     value : "File added correctly"
                 }]
@@ -42,8 +42,8 @@ export function build_my_address_space(server) {
         catch(err){
             console.log(err)
             callback(err, {
+                statusCode: opcua.StatusCodes.Bad,
                 outputArguments: [{
-                    statusCode: opcua.StatusCodes.Bad,
                     dataType: opcua.DataType.String,
                     value : err.message
                 }]
@@ -61,8 +61,8 @@ export function build_my_address_space(server) {
             const filePath = path.join(directoryPath, filename)
             fs.unlinkSync(filePath)
             callback(null, {
+                statusCode: opcua.StatusCodes.Good,
                 outputArguments: [{
-                    statusCode: opcua.StatusCodes.Good,
                     dataType: opcua.DataType.String,
                     value : "File removed correctly"
                 }]
@@ -70,8 +70,8 @@ export function build_my_address_space(server) {
         } catch(err) {
             console.error(err)
             callback(err, {
+                statusCode: opcua.StatusCodes.Bad,
                 outputArguments: [{
-                    statusCode: opcua.StatusCodes.Bad,
                     dataType: opcua.DataType.String,
                     value : "Couldn't remove file, check if it exists"
                 }]
